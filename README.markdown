@@ -6,11 +6,11 @@
 
 ## Visão Geral
 
-O **Commodos** é um sistema baseado em aprendizado de máquina que prevê preços de commodities, como café (KC=F), petróleo bruto (CL=F) e soja (ZS=F), utilizando dados históricos. Ele combina um modelo LSTM (Long Short-Term Memory) para previsão de preços, um módulo de coleta de notícias para fornecer contexto de mercado e uma interface web interativa construída com Streamlit para visualização de previsões e notícias. O Commodos foca em previsões precisas de preços em USD, com possibilidade de conversão para BRL, e na correlação entre eventos de mercado e tendências de preços.
+O **Commodos** é um sistema baseado em aprendizado de máquina que prevê preços de commodities, como café (KC=F), petróleo bruto (CL=F) e soja (ZS=F), utilizando dados históricos. Ele combina um modelo LSTM (Long Short-Term Memory), implementado com TensorFlow ou PyTorch, para previsão de preços, um módulo de coleta de notícias para fornecer contexto de mercado, e uma interface web interativa construída com Streamlit para visualização de previsões e notícias. Todas as funcionalidades (download, treinamento, scraping e interface) são gerenciadas pelo script `app.py`. O Commodos foca em previsões precisas de preços em USD, com possibilidade de conversão para BRL, e na correlação entre eventos de mercado e tendências de preços.
 
 ## Funcionalidades
 
-- **Previsão de Preços**: Utiliza um modelo LSTM com possibilidade de integrar um mecanismo de Attention para prever preços de commodities com base em dados históricos do Yahoo Finance (yfinance).
+- **Previsão de Preços**: Utiliza um modelo LSTM (via TensorFlow ou PyTorch) com possibilidade de integrar um mecanismo de Attention para prever preços de commodities com base em dados históricos do Yahoo Finance (yfinance).
 - **Coleta de Notícias**: Realiza scraping e coleta de notícias de feeds RSS e sites (ex.: Bloomberg, Reuters, CafePoint) para contextualizar os movimentos de preços.
 - **Interface Interativa**: Um painel Streamlit exibe previsões de preços, indicadores técnicos e notícias relevantes, com um menu dropdown para selecionar commodities.
 - **Enriquecimento de Dados**: Inclui indicadores técnicos (ex.: médias móveis, RSI) para aumentar a precisão das previsões.
@@ -26,6 +26,7 @@ COMODOS/
 │   ├── app.py             # Aplicação Streamlit (download, treinamento, scraping e interface)
 │   ├── tests/             # Testes unitários
 │   │   ├── __init__.py    # Torna 'tests' um pacote Python
+├── .gitignore             # Ignora arquivos desnecessários
 ├── poetry.lock             # Arquivo de bloqueio de dependências do Poetry
 ├── pyproject.toml          # Configuração do projeto e dependências
 ├── README.md               # Documentação do projeto
@@ -36,17 +37,18 @@ COMODOS/
 - Python 3.13 ou superior ([Python Downloads](https://www.python.org/downloads/release/python-3133/))
 - Poetry (para gerenciamento de dependências) ([Poetry Installation](https://python-poetry.org/docs/#installation))
 - Streamlit 1.38.0 ou superior ([Streamlit Documentation](https://streamlit.io/))
+- Git (para clonagem do repositório) ([Git SCM Downloads](https://git-scm.com/downloads))
 
 ## Instalação
 
-1. **Clonar o Repositório**:
+1. **Clonar o Repositório via SSH**:
 
    ```bash
-   git clone https://github.com/<your-username>/commodos.git
+   git clone git@github.com:<your-username>/comodos.git
    cd COMODOS
    ```
 
-   *Nota*: Substitua `<your-username>` pelo seu usuário ou organização no GitHub.
+   *Nota*: Substitua `<your-username>` pelo seu usuário ou organização no GitHub. Certifique-se de ter configurado uma chave SSH em [GitHub > Settings > SSH and GPG keys](https://github.com/settings/keys).
 
 2. **Instalar o Poetry**:
 
@@ -81,6 +83,12 @@ Todas as funcionalidades do Commodos (download de dados, treinamento do modelo, 
    Execute o aplicativo Streamlit:
 
    ```bash
+   poetry run start-app
+   ```
+
+   Ou, alternativamente:
+
+   ```bash
    poetry run streamlit run comodos/app.py
    ```
 
@@ -90,7 +98,7 @@ Todas as funcionalidades do Commodos (download de dados, treinamento do modelo, 
    - Coletar notícias de sites como Bloomberg, Reuters, e CafePoint.
    - Visualizar previsões, indicadores técnicos e notícias.
 
-   *Nota*: Certifique-se de que `app.py` está configurado para executar todas essas tarefas. Consulte os logs em `comodos/cache/` para erros.
+   *Nota*: Certifique-se de que `app.py` está configurado para executar todas essas tarefas. Consulte os logs em `comodos/cache/` para erros. Configure variáveis de ambiente em um arquivo `.env` (ex.: chaves de API), se necessário.
 
 ## Exemplo
 
@@ -104,7 +112,7 @@ Ao selecionar "Café (KC=F)" no painel do Commodos, você verá:
 ## Como Funciona
 
 ### Previsão de Preços
-O sistema utiliza uma rede neural LSTM treinada com dados históricos de preços obtidos via [yfinance](https://pypi.org/project/yfinance/). O modelo analisa padrões temporais para prever preços futuros, com possibilidade de integrar mecanismos de Attention para maior precisão. Tudo é gerenciado via `app.py`.
+O sistema utiliza uma rede neural LSTM (via TensorFlow ou PyTorch) treinada com dados históricos de preços obtidos via [yfinance](https://pypi.org/project/yfinance/). O modelo analisa padrões temporais para prever preços futuros, com possibilidade de integrar mecanismos de Attention para maior precisão. Tudo é gerenciado via `app.py`.
 
 ### Coleta de Notícias
 Notícias são coletadas de feeds RSS e sites como [Bloomberg](https://www.bloomberg.com/), [Reuters](https://www.reuters.com/), e [CafePoint](https://www.cafepoint.com.br/) usando as bibliotecas `feedparser` e `beautifulsoup4` dentro de `app.py`. Essas notícias contextualizam eventos que podem impactar os preços.
@@ -133,14 +141,15 @@ Construída com [Streamlit](https://streamlit.io/), a interface, implementada em
 
 ## Requisitos
 
-As dependências são gerenciadas pelo Poetry. As principais incluem:
+As dependências são gerenciadas pelo Poetry e definidas no `pyproject.toml`. As principais incluem:
 
 - `yfinance`: Obtenção de dados históricos.
-- `tensorflow`: Construção e treinamento do modelo LSTM.
-- `streamlit`: Interface web (versão 1.38.0 ou superior recomendada para compatibilidade com Python 3.13).
-- `pandas`, `numpy`: Manipulação de dados.
+- `tensorflow`, `torch`, `torchvision`, `torchaudio`: Construção e treinamento do modelo LSTM.
+- `streamlit`: Interface web (versão 1.38.0 ou superior recomendada).
+- `pandas`, `numpy`, `scikit-learn`: Manipulação de dados e aprendizado de máquina.
 - `matplotlib`, `plotly`: Visualização.
 - `feedparser`, `beautifulsoup4`: Coleta de notícias.
+- `requests`, `python-dotenv`: Requisições HTTP e gerenciamento de variáveis de ambiente.
 
 ### Streamlit
 O Streamlit é usado para criar a interface interativa. Para verificar a versão instalada:
@@ -179,8 +188,9 @@ Para perguntas ou sugestões, abra uma issue no repositório ou contate os mante
 
 ## Solução de Problemas
 
-- **Erro: "'fetch-data' não é reconhecido"**: O comando `fetch-data` não está definido. Use a interface Streamlit (`poetry run streamlit run comodos/app.py`) para baixar dados.
-- **Erro: "File does not exist: comodos/app.py"**: Execute `poetry run streamlit run comodos/app.py` a partir do diretório `COMODOS/`, onde `app.py` está em `comodos/`.
-- **Interface não carrega em `http://localhost:8501`**: Confirme que `poetry run streamlit run comodos/app.py` foi executado e que a porta 8501 está livre. Verifique os logs do Streamlit.
+- **Erro: "'fetch-data' não é reconhecido"**: O comando `fetch-data` não está definido. Use a interface Streamlit (`poetry run start-app`) para baixar dados.
+- **Erro: "File does not exist: comodos/app.py"**: Execute `poetry run start-app` ou `poetry run streamlit run comodos/app.py` a partir do diretório `COMODOS/`, onde `app.py` está em `comodos/`.
+- **Interface não carrega em `http://localhost:8501`**: Confirme que `poetry run start-app` foi executado e que a porta 8501 está livre. Verifique os logs do Streamlit.
 - **Erro de versão do Streamlit**: Certifique-se de que a versão do Streamlit é 1.38.0 ou superior. Atualize com `poetry add streamlit@latest`.
 - **Dados ausentes ou inconsistentes**: Verifique os logs em `comodos/cache/` para detalhes sobre erros de download ou scraping.
+- **Erro com variáveis de ambiente**: Configure o arquivo `.env` com as chaves necessárias (ex.: chaves de API) e garanta que ele esteja no `.gitignore`.
