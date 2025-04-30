@@ -9,6 +9,9 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
 import matplotlib.pyplot as plt
+import os
+from pathlib import Path
+import time
 
 # Função para calcular RSI
 def compute_rsi(data, periods=14):
@@ -16,7 +19,8 @@ def compute_rsi(data, periods=14):
     gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=periods).mean()
     rs = gain / loss
-    return 100 - (100 / (1 + rs))
+    rsi = 100 - (100 / (1 + rs))
+    return rsi.fillna(method='ffill')
 
 # Função para calcular MACD
 def compute_macd(data, short=12, long=26, signal=9):
@@ -24,7 +28,8 @@ def compute_macd(data, short=12, long=26, signal=9):
     exp2 = data.ewm(span=long, adjust=False).mean()
     macd = exp1 - exp2
     signal_line = macd.ewm(span=signal, adjust=False).mean()
-    return macd - signal_line
+    macd_hist = macd - signal_line
+    return macd_hist.fillna(method='ffill')
 
 # Modelo LSTM
 class LSTMModel(nn.Module):
@@ -36,6 +41,20 @@ class LSTMModel(nn.Module):
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         return self.fc(lstm_out[:, -1, :])
+
+# Funções de Cache
+def salvar_cache_dados(data, ticker, cache_dir="comodos/cache"):
+    Path(cache_dir).mkdir(parents=True, exist_ok=True)
+    cache_file = Path(cache_dir) / f"dados_{ticker.lower().replace('=', '_')}.csv"
+    data.to_csv(cache_file)
+
+def carregar_cache_dados(ticker, cache_dir="comodos/cache", max_age=24*60*60):
+    cache_file = Path(cache_dir) / f"dados_{ticker.lower().replace('=', '_')}.csv"
+    if not cache_file.exists():
+        return None
+    if (time.time() - cache_file.stat().st_mtime) > max_age:  # Cache expirado
+        return None
+    return pd.read_csv(cache_file, index_col=0, parse_dates=True)
 
 # Preprocessamento
 def preprocessar_dados(data, seq_length=45):
@@ -51,6 +70,12 @@ def preprocessar_dados(data, seq_length=45):
 
 # Obter dados
 def obter_dados(ticker, start_date="2023-01-01"):
+    # Verificar cache
+    cached_data = carregar_cache_dados(ticker)
+    if cached_data is not None:
+        print(f"Dados carregados do cache para {ticker}")
+        return cached_data
+
     hoje = datetime.now().date()
     data = yf.download(ticker, start=start_date, end=hoje.strftime("%Y-%m-%d"), auto_adjust=False)
     if data.empty or len(data) < 100:
@@ -66,9 +91,11 @@ def obter_dados(ticker, start_date="2023-01-01"):
         dollar_data = yf.download("DX-Y.NYB", start=start_date, end=hoje.strftime("%Y-%m-%d"))
         data['Dollar'] = dollar_data['Close'].reindex(data.index, method='ffill')
     except:
-        data['Dollar'] = 0.0
+        data['Dollar'] = data['Close'].mean()  # Fallback: média do preço de fechamento
 
-    return data[['Close', 'Close_MA', 'RSI', 'MACD', 'Volatility', 'Volume', 'Dollar']].dropna()
+    data = data[['Close', 'Close_MA', 'RSI', 'MACD', 'Volatility', 'Volume', 'Dollar']].dropna()
+    salvar_cache_dados(data, ticker)
+    return data
 
 def plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_next):
     y_test_inv = scaler.inverse_transform(
@@ -78,18 +105,19 @@ def plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_n
         np.concatenate([predicted_prices, np.zeros((predicted_prices.shape[0], data.shape[1]-1))], axis=1)
     )[:, 0]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(len(y_test_inv)), y_test_inv, label="Real")
-    plt.plot(range(len(predicted_inv)), predicted_inv, label="Previsto")
-    plt.axvline(x=len(y_test_inv)-1, color='r', linestyle='--', label="Último Dia")
-    plt.plot([len(y_test_inv)-1, len(y_test_inv)], [y_test_inv[-1], predicted_next], 'go-', label="Previsão Amanhã")
-    plt.xlim(len(y_test_inv)-60, len(y_test_inv)+1)
-    plt.title(f"Previsões para {ticker}")
-    plt.xlabel("Dias")
-    plt.ylabel("Preço (USD)")  # Alterado de R$ para USD
-    plt.legend()
-    plt.savefig(f"{ticker}_predictions.png")
-    plt.close()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(range(len(y_test_inv)), y_test_inv, label="Real")
+    ax.plot(range(len(predicted_inv)), predicted_inv, label="Previsto")
+    ax.axvline(x=len(y_test_inv)-1, color='r', linestyle='--', label="Último Dia")
+    ax.plot([len(y_test_inv)-1, len(y_test_inv)], [y_test_inv[-1], predicted_next], 'go-', label="Previsão Amanhã")
+    ax.set_xlim(len(y_test_inv)-60, len(y_test_inv)+1)
+    ax.set_title(f"Previsões para {ticker}")
+    ax.set_xlabel("Dias")
+    ax.set_ylabel("Preço (USD)")
+    ax.legend()
+    fig.savefig(f"{ticker}_predictions.png")
+    plt.close(fig)
+    return fig
 
 def direction_accuracy(y_true, y_pred):
     y_true_diff = np.diff(y_true.flatten())
@@ -174,14 +202,15 @@ def executar_previsao(ticker, exibir_log=True):
                 np.concatenate([predicted_next_scaled, np.zeros((1, X.shape[2]-1))], axis=1)
             )[0][0]
 
-        preco_atual = float(data['Close'].iloc[-1].item())
-        plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_next)
+        preco_atual = float(data['Close'].iloc[-1])
+        fig = plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_next)
 
         return {
             "preco_atual": preco_atual,
             "previsao_amanha": predicted_next,
             "rmse": rmse,
-            "acuracia": dir_acc
+            "acuracia": dir_acc,
+            "grafico": fig
         }
 
     except Exception as e:
