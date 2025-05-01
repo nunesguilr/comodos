@@ -9,6 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
 import matplotlib.pyplot as plt
+import time
 
 # Função para calcular RSI
 def compute_rsi(data, periods=14):
@@ -51,6 +52,7 @@ def preprocessar_dados(data, seq_length=45):
 
 # Obter dados
 def obter_dados(ticker, start_date="2023-01-01"):
+    time.sleep(1)
     hoje = datetime.now().date()
     data = yf.download(ticker, start=start_date, end=hoje.strftime("%Y-%m-%d"), auto_adjust=False)
     if data.empty or len(data) < 100:
