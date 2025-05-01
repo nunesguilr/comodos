@@ -6,10 +6,21 @@ import time
 
 def obter_nome_commodity(ticker):
     nomes_comodities = {
-        "GC=F": "Ouro", "SI=F": "Prata", "CL=F": "Petróleo WTI",
-        "BZ=F": "Petróleo Brent", "NG=F": "Gás Natural", "HG=F": "Cobre",
-        "ZC=F": "Milho", "ZS=F": "Soja", "ZW=F": "Trigo",
-        "SB=F": "Açúcar", "CT=F": "Algodão", "KC=F": "Café"
+        # Metais
+        "GC=F": "Ouro", "SI=F": "Prata", "PL=F": "Platina", "PA=F": "Paládio", "HG=F": "Cobre",
+        # Energia
+        "CL=F": "Petróleo WTI", "BZ=F": "Petróleo Brent", "NG=F": "Gás Natural", 
+        "RB=F": "Gasolina RBOB", "HO=F": "Óleo de Aquecimento",
+        # Grãos e Agricultura
+        "ZC=F": "Milho", "ZS=F": "Soja", "ZW=F": "Trigo", "KE=F": "Trigo Vermelho", 
+        "ZM=F": "Farelo de Soja", "ZL=F": "Óleo de Soja", "ZO=F": "Aveia",
+        # Carnes
+        "LE=F": "Gado Vivo", "HE=F": "Carne de Porco", "GF=F": "Gado de Corte",
+        # Soft Commodities
+        "SB=F": "Açúcar", "CC=F": "Cacau", "KC=F": "Café Arábica", "CT=F": "Algodão", 
+        "OJ=F": "Suco de Laranja", "LBS=F": "Madeira",
+        # Outros
+        "DX=F": "Índice Dólar", "ES=F": "S&P 500 Futuros", "NQ=F": "Nasdaq 100 Futuros"
     }
     return nomes_comodities.get(ticker, ticker)
 
@@ -174,12 +185,22 @@ def buscar_noticias_scraping(termo, termo_ingles):
 
 def buscar_noticias(termo, ticker):
     termos_ingles = {
-        "Ouro": "gold", "Prata": "silver", "Petróleo WTI": "WTI oil",
-        "Petróleo Brent": "Brent oil", "Gás Natural": "natural gas", "Cobre": "copper",
-        "Milho": "corn", "Soja": "soybean", "Trigo": "wheat",
-        "Açúcar": "sugar", "Algodão": "cotton", "Café": "coffee"
+        # Metais
+        "Ouro": "gold", "Prata": "silver", "Platina": "platinum", "Paládio": "palladium", "Cobre": "copper",
+        # Energia
+        "Petróleo WTI": "WTI oil", "Petróleo Brent": "Brent oil", "Gás Natural": "natural gas",
+        "Gasolina RBOB": "gasoline", "Óleo de Aquecimento": "heating oil",
+        # Grãos e Agricultura
+        "Milho": "corn", "Soja": "soybean", "Trigo": "wheat", "Trigo Vermelho": "red wheat",
+        "Farelo de Soja": "soybean meal", "Óleo de Soja": "soybean oil", "Aveia": "oats",
+        # Carnes
+        "Gado Vivo": "live cattle", "Carne de Porco": "lean hogs", "Gado de Corte": "feeder cattle",
+        # Soft Commodities
+        "Açúcar": "sugar", "Cacau": "cocoa", "Café Arábica": "coffee", "Algodão": "cotton",
+        "Suco de Laranja": "orange juice", "Madeira": "lumber",
+        # Outros
+        "Índice Dólar": "dollar index"
     }
-    
     termo_ingles = termos_ingles.get(termo, termo.lower())
     
     noticias_rss = buscar_noticias_rss(termo, termo_ingles)

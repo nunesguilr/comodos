@@ -6,19 +6,32 @@ st.set_page_config(page_title="Previsão de Commodities", layout="wide")
 
 st.title("📊 Previsão e Notícias de Commodities")
 
-# Dicionário de tickers válidos
+# Dicionário completo de tickers válidos
 TICKERS_VALIDOS = {
-    "GC=F": "Ouro", "SI=F": "Prata", "CL=F": "Petróleo WTI",
-    "BZ=F": "Petróleo Brent", "NG=F": "Gás Natural", "HG=F": "Cobre",
-    "ZC=F": "Milho", "ZS=F": "Soja", "ZW=F": "Trigo",
-    "SB=F": "Açúcar", "CT=F": "Algodão", "KC=F": "Café"
+    # Metais
+    "GC=F": "Ouro", "SI=F": "Prata", "PL=F": "Platina", "PA=F": "Paládio", "HG=F": "Cobre",
+    # Energia
+    "CL=F": "Petróleo WTI", "BZ=F": "Petróleo Brent", "NG=F": "Gás Natural",
+    "RB=F": "Gasolina RBOB", "HO=F": "Óleo de Aquecimento",
+    # Grãos e Agricultura
+    "ZC=F": "Milho", "ZS=F": "Soja", "ZW=F": "Trigo", "KE=F": "Trigo Vermelho",
+    "ZM=F": "Farelo de Soja", "ZL=F": "Óleo de Soja", "ZO=F": "Aveia",
+    # Carnes
+    "LE=F": "Gado Vivo", "HE=F": "Carne de Porco", "GF=F": "Gado de Corte",
+    # Soft Commodities
+    "SB=F": "Açúcar", "CC=F": "Cacau", "KC=F": "Café Arábica", "CT=F": "Algodão",
+    "OJ=F": "Suco de Laranja", "LBS=F": "Madeira"
 }
 
-# Lista de commodities válidas
-commodities = list(TICKERS_VALIDOS.values())
+# Lista de commodities válidas em ordem alfabética
+commodities = sorted(list(TICKERS_VALIDOS.values()))
 
-# Campo de texto para o usuário digitar a commodity
-nome_commodity = st.text_input("Digite o nome da commodity (ex.: Café, Ouro, Soja):", value="Café")
+# Campo de seleção para o usuário escolher a commodity
+nome_commodity = st.selectbox(
+    "Selecione ou digite o nome da commodity:",
+    options=commodities,
+    index=commodities.index("Café Arábica") if "Café Arábica" in commodities else 0
+)
 
 # Validar a entrada
 if nome_commodity in commodities:
@@ -56,5 +69,23 @@ if nome_commodity in commodities:
             else:
                 st.info(noticias.get("mensagem", "Nenhuma notícia encontrada."))
 else:
-    # Mensagem de erro com a lista de commodities válidas
     st.error(f"Valor inválido: '{nome_commodity}'. Por favor, escolha uma das seguintes commodities: {', '.join(commodities)}.")
+
+# Adicionando informações adicionais na sidebar
+st.sidebar.markdown("""
+### ℹ️ Sobre esta aplicação
+Esta ferramenta combina:
+- Previsão de preços usando modelos de machine learning
+- Notícias em tempo real sobre commodities
+
+**Como usar:**
+1. Selecione uma commodity na lista
+2. Veja a previsão de preço e notícias relacionadas
+3. Para commodities agrícolas, as notícias incluem dados sobre safras e clima
+
+**Commodities disponíveis:**
+- Metais preciosos e industriais
+- Energia e petróleo
+- Grãos e agrícolas
+- Carnes e soft commodities
+""")
