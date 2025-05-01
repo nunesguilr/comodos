@@ -3,9 +3,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import time
-import os
-import json
-from pathlib import Path
 
 def obter_nome_commodity(ticker):
     nomes_comodities = {
@@ -16,44 +13,29 @@ def obter_nome_commodity(ticker):
     }
     return nomes_comodities.get(ticker, ticker)
 
-def salvar_cache(noticias, termo, cache_dir="comodos/cache"):
-    Path(cache_dir).mkdir(parents=True, exist_ok=True)
-    cache_file = Path(cache_dir) / f"noticias_{termo.lower().replace(' ', '_')}.json"
-    with open(cache_file, "w", encoding="utf-8") as f:
-        json.dump(noticias, f, ensure_ascii=False, indent=2)
-
-def carregar_cache(termo, cache_dir="comodos/cache", max_age=24*60*60):
-    cache_file = Path(cache_dir) / f"noticias_{termo.lower().replace(' ', '_')}.json"
-    if not cache_file.exists():
-        return None
-    if (time.time() - cache_file.stat().st_mtime) > max_age:  # Cache expirado
-        return None
-    with open(cache_file, "r", encoding="utf-8") as f:
-        return json.load(f)
-
 def buscar_noticias_rss(termo, termo_ingles):
     feeds = [
         # Internacionais
-        "https://www.reuters.com/arc/outboundfeeds/newsroom/commodities/?format=xml",
-        "https://www.investing.com/rss/news_1.rss",
-        "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",
-        "https://www.marketwatch.com/rss/commodities",
-        "https://www.ft.com/markets?format=rss",
-        "https://www.cnbc.com/id/10000664/device/rss",
-        "https://www.thestreet.com/feed/markets",
-        "https://www.bloomberg.com/feeds/markets.xml",
-        "https://www.barchart.com/stocks/sectors/commodities/rss",
-        "https://www.agriculture.com/news/rss",
+        "https://www.reuters.com/arc/outboundfeeds/newsroom/commodities/?format=xml",  # Reuters Commodities
+        "https://www.investing.com/rss/news_1.rss",  # Investing.com Commodities
+        "https://feeds.a.dj.com/rss/RSSMarketsMain.xml",  # WSJ Markets
+        "https://www.marketwatch.com/rss/commodities",  # MarketWatch Commodities
+        "https://www.ft.com/markets?format=rss",  # Financial Times Markets
+        "https://www.cnbc.com/id/10000664/device/rss",  # CNBC Markets
+        "https://www.thestreet.com/feed/markets",  # TheStreet Markets
+        "https://www.bloomberg.com/feeds/markets.xml",  # Bloomberg Markets
+        "https://www.barchart.com/stocks/sectors/commodities/rss",  # Barchart Commodities
+        "https://www.agriculture.com/news/rss",  # Agriculture.com
         # Brasileiras
-        "https://www.valor.com.br/empresas/agro/rss.xml",
-        "https://www.estadao.com.br/economia/agronegocio/rss.xml",
-        "https://www1.folha.uol.com.br/mercado/rss091.xml",
-        "https://exame.com/brasil/agro/feed/",
-        "https://globorural.globo.com/rss.xml",
-        "https://www.canalrural.com.br/rss/",
-        "https://www.noticiasagricolas.com.br/rss.xml",
-        "https://g1.globo.com/economia/agronegocios/noticia/feed/",
-        "https://www.ocafezinho.com/feed/"
+        "https://www.valor.com.br/empresas/agro/rss.xml",  # Valor Econômico Agro
+        "https://www.estadao.com.br/economia/agronegocio/rss.xml",  # Estadão Agronegócio
+        "https://www1.folha.uol.com.br/mercado/rss091.xml",  # Folha Mercado
+        "https://exame.com/brasil/agro/feed/",  # Exame Agronegócio
+        "https://globorural.globo.com/rss.xml",  # Globo Rural
+        "https://www.canalrural.com.br/rss/",  # Canal Rural
+        "https://www.noticiasagricolas.com.br/rss.xml",  # Notícias Agrícolas
+        "https://g1.globo.com/economia/agronegocios/noticia/feed/",  # G1 Agronegócio
+        "https://www.ocafezinho.com/feed/"  # O Cafezinho
     ]
     
     noticias = []
@@ -88,24 +70,24 @@ def buscar_noticias_rss(termo, termo_ingles):
 def buscar_noticias_scraping(termo, termo_ingles):
     urls = [
         # Internacionais
-        "https://www.investing.com/news/commodities-news",
-        "https://www.reuters.com/markets/commodities/",
-        "https://www.ft.com/commodities",
-        "https://www.cnbc.com/commodities/",
-        "https://www.thestreet.com/markets",
-        "https://www.bloomberg.com/markets/commodities",
-        "https://www.barchart.com/news/commodities",
-        "https://www.agriculture.com/markets/commodities",
+        "https://www.investing.com/news/commodities-news",  # Investing.com Commodities
+        "https://www.reuters.com/markets/commodities/",  # Reuters Commodities
+        "https://www.ft.com/commodities",  # Financial Times Commodities
+        "https://www.cnbc.com/commodities/",  # CNBC Commodities
+        "https://www.thestreet.com/markets",  # TheStreet Markets
+        "https://www.bloomberg.com/markets/commodities",  # Bloomberg Commodities
+        "https://www.barchart.com/news/commodities",  # Barchart News
+        "https://www.agriculture.com/markets/commodities",  #
         # Brasileiras
-        "https://www.valor.com.br/agro/",
-        "https://www.estadao.com.br/economia/agronegocio/",
-        "https://www1.folha.uol.com.br/mercado/",
-        "https://exame.com/economia/agro/",
-        "https://revistagloborural.globo.com/mercado/",
-        "https://www.canalrural.com.br/noticias/mercado/",
-        "https://www.noticiasagricolas.com.br/noticias/cafe/",
-        "https://g1.globo.com/economia/agronegocios/",
-        "https://www.ocafezinho.com/categoria/economia/"
+        "https://www.valor.com.br/agro/",  # Valor Econômico Agro
+        "https://www.estadao.com.br/economia/agronegocio/",  # Estadão Agronegócio
+        "https://www1.folha.uol.com.br/mercado/",  # Folha Mercado
+        "https://exame.com/economia/agro/",  # Exame Agronegócio
+        "https://revistagloborural.globo.com/mercado/",  # Globo Rural Mercado
+        "https://www.canalrural.com.br/noticias/mercado/",  # Canal Rural Mercado
+        "https://www.noticiasagricolas.com.br/noticias/cafe/",  # Notícias Agrícolas Café
+        "https://g1.globo.com/economia/agronegocios/",  # G1 Agronegócio
+        "https://www.ocafezinho.com/categoria/economia/"  # O Cafezinho Economia
     ]
     
     noticias = []
@@ -200,12 +182,6 @@ def buscar_noticias(termo, ticker):
     
     termo_ingles = termos_ingles.get(termo, termo.lower())
     
-    # Verificar cache
-    noticias_cache = carregar_cache(termo)
-    if noticias_cache:
-        print(f"Notícias carregadas do cache para {termo}")
-        return noticias_cache
-    
     noticias_rss = buscar_noticias_rss(termo, termo_ingles)
     noticias_scraping = buscar_noticias_scraping(termo, termo_ingles)
     
@@ -218,12 +194,9 @@ def buscar_noticias(termo, ticker):
             links_vistos.add(noticia["link"])
     
     if noticias_unicas:
-        salvar_cache(noticias_unicas[:5], termo)
         return noticias_unicas[:5]
     
-    mensagem = {"mensagem": f"Nenhuma notícia relevante encontrada para {termo} via RSS ou scraping."}
-    salvar_cache(mensagem, termo)
-    return mensagem
+    return {"mensagem": f"Nenhuma notícia relevante encontrada para {termo} via RSS ou scraping."}
 
 if __name__ == "__main__":
     ticker = input("Digite o código da commodity (ex: KC=F para Café): ").strip().upper()
@@ -231,8 +204,8 @@ if __name__ == "__main__":
     noticias = buscar_noticias(nome_commodity, ticker)
 
     print(f"\n### Últimas notícias sobre {nome_commodity} ###")
-    if isinstance(noticias, dict) and "mensagem" in noticias:
-        print(noticias["mensagem"])
+    if isinstance(noticias, dict) and ("erro" in noticias or "mensagem" in noticias):
+        print(noticias.get("erro", noticias.get("mensagem")))
     else:
         for noticia in noticias:
             print(f"- {noticia['titulo']}: {noticia['link']}")

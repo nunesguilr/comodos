@@ -14,42 +14,47 @@ TICKERS_VALIDOS = {
     "SB=F": "Açúcar", "CT=F": "Algodão", "KC=F": "Café"
 }
 
-# Criar lista de nomes de commodities para o selectbox
+# Lista de commodities válidas
 commodities = list(TICKERS_VALIDOS.values())
 
-# Menu suspenso para selecionar a commodity
-nome_commodity = st.selectbox("Selecione a commodity:", commodities, index=commodities.index("Café"))
+# Campo de texto para o usuário digitar a commodity
+nome_commodity = st.text_input("Digite o nome da commodity (ex.: Café, Ouro, Soja):", value="Café")
 
-# Mapear o nome da commodity para o ticker
-ticker = [k for k, v in TICKERS_VALIDOS.items() if v == nome_commodity][0]
+# Validar a entrada
+if nome_commodity in commodities:
+    # Mapear o nome da commodity para o ticker
+    ticker = [k for k, v in TICKERS_VALIDOS.items() if v == nome_commodity][0]
 
-if ticker:
-    nome = obter_nome_commodity(ticker)
+    if ticker:
+        nome = obter_nome_commodity(ticker)
 
-    col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([2, 1])
 
-    with col1:
-        st.subheader(f"🔮 Previsão de Preço - {nome}")
-        try:
-            resultado = executar_previsao(ticker, exibir_log=False)
+        with col1:
+            st.subheader(f"🔮 Previsão de Preço - {nome}")
+            try:
+                resultado = executar_previsao(ticker, exibir_log=False)
 
-            st.image(f"{ticker}_predictions.png", use_container_width=True)
+                st.image(f"{ticker}_predictions.png", use_container_width=True)
 
-            st.markdown(f"""
-                ### 📊 Resultado da Previsão – {nome}
-                - **Preço Atual:** USD {resultado['preco_atual']:.2f}  
-                - **Previsão para Amanhã:** USD {resultado['previsao_amanha']:.2f}  
-                - **RMSE(Raiz Erro Quadrático Médio):** {resultado['rmse']:.4f}  
-                - **Acurácia de Direção:** {resultado['acuracia']:.2%}  
-            """)
-        except Exception as e:
-            st.error(f"Erro ao gerar previsão: {e}")
+                st.markdown(f"""
+                    ### 📊 Resultado da Previsão – {nome}
+                    - **Preço Atual:** USD {resultado['preco_atual']:.2f}  
+                    - **Previsão para Amanhã:** USD {resultado['previsao_amanha']:.2f}  
+                    - **RMSE (Raiz Erro Quadrático Médio):** {resultado['rmse']:.4f}  
+                    - **Acurácia de Direção:** {resultado['acuracia']:.2%}  
+                """)
+            except Exception as e:
+                st.error(f"Erro ao gerar previsão: {e}")
 
-    with col2:
-        st.subheader(f"📰 Notícias Recentes - {nome}")
-        noticias = buscar_noticias(nome, ticker)
-        if isinstance(noticias, list):
-            for n in noticias:
-                st.markdown(f"- [{n['titulo']}]({n['link']})")
-        else:
-            st.info(noticias.get("mensagem", "Nenhuma notícia encontrada."))
+        with col2:
+            st.subheader(f"📰 Notícias Recentes - {nome}")
+            noticias = buscar_noticias(nome, ticker)
+            if isinstance(noticias, list):
+                for n in noticias:
+                    st.markdown(f"- [{n['titulo']}]({n['link']})")
+            else:
+                st.info(noticias.get("mensagem", "Nenhuma notícia encontrada."))
+else:
+    # Mensagem de erro com a lista de commodities válidas
+    st.error(f"Valor inválido: '{nome_commodity}'. Por favor, escolha uma das seguintes commodities: {', '.join(commodities)}.")
