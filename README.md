@@ -44,11 +44,9 @@ COMODOS/
 1. **Clonar o Repositório via SSH**:
 
    ```bash
-   git clone git@github.com:<your-username>/comodos.git
+   git clone git@github.com:nunesguilr/comodos.git
    cd COMODOS
    ```
-
-   *Nota*: Substitua `<your-username>` pelo seu usuário ou organização no GitHub. Certifique-se de ter configurado uma chave SSH em [GitHub > Settings > SSH and GPG keys](https://github.com/settings/keys).
 
 2. **Instalar o Poetry**:
 
