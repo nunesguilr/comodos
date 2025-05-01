@@ -10,6 +10,7 @@ from sklearn.metrics import mean_squared_error
 from datetime import datetime
 import matplotlib.pyplot as plt
 import time
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 # Função para calcular RSI
 def compute_rsi(data, periods=14):
@@ -50,28 +51,52 @@ def preprocessar_dados(data, seq_length=45):
 
     return np.array(X), np.array(y).reshape(-1, 1), scaler
 
-# Obter dados
+# Obter dados com tratamento de rate limit
+@retry(stop=stop_after_attempt(3), wait=wait_random_exponential(multiplier=1, min=4, max=10))
 def obter_dados(ticker, start_date="2023-01-01"):
-    time.sleep(1)
+    """Versão com tratamento de rate limit"""
+    time.sleep(max(0.5, np.random.rand()))  # Delay aleatório entre 0.5 e 1.5 segundos
+    
     hoje = datetime.now().date()
-    data = yf.download(ticker, start=start_date, end=hoje.strftime("%Y-%m-%d"), auto_adjust=False)
-    if data.empty or len(data) < 100:
-        raise ValueError("Dados insuficientes ou ticker inválido.")
-
-    data['Close_MA'] = data['Close'].rolling(window=7).mean()
-    data['RSI'] = compute_rsi(data['Close'])
-    data['MACD'] = compute_macd(data['Close'])
-    data['Volatility'] = data['Close'].rolling(window=14).std()
-    data['Volume'] = data['Volume']
-
     try:
-        dollar_data = yf.download("DX-Y.NYB", start=start_date, end=hoje.strftime("%Y-%m-%d"))
-        data['Dollar'] = dollar_data['Close'].reindex(data.index, method='ffill')
-    except:
-        data['Dollar'] = 0.0
+        data = yf.download(
+            ticker, 
+            start=start_date, 
+            end=hoje.strftime("%Y-%m-%d"), 
+            progress=False,
+            threads=False
+        )
+        
+        if data.empty or len(data) < 100:
+            raise ValueError("Dados insuficientes ou ticker inválido.")
 
-    return data[['Close', 'Close_MA', 'RSI', 'MACD', 'Volatility', 'Volume', 'Dollar']].dropna()
+        data['Close_MA'] = data['Close'].rolling(window=7).mean()
+        data['RSI'] = compute_rsi(data['Close'])
+        data['MACD'] = compute_macd(data['Close'])
+        data['Volatility'] = data['Close'].rolling(window=14).std()
+        data['Volume'] = data['Volume']
 
+        try:
+            time.sleep(1)  # Delay adicional para o dólar
+            dollar_data = yf.download(
+                "DX-Y.NYB", 
+                start=start_date, 
+                end=hoje.strftime("%Y-%m-%d"),
+                progress=False,
+                threads=False
+            )
+            data['Dollar'] = dollar_data['Close'].reindex(data.index, method='ffill')
+        except:
+            data['Dollar'] = 0.0
+
+        return data[['Close', 'Close_MA', 'RSI', 'MACD', 'Volatility', 'Volume', 'Dollar']].dropna()
+        
+    except Exception as e:
+        if "Rate limited" in str(e):
+            time.sleep(10)  # Espera mais longa se for rate limit
+        raise
+
+# Funções restantes permanecem exatamente iguais
 def plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_next):
     y_test_inv = scaler.inverse_transform(
         np.concatenate([y_test, np.zeros((y_test.shape[0], data.shape[1]-1))], axis=1)
@@ -101,6 +126,10 @@ def direction_accuracy(y_true, y_pred):
 
 def executar_previsao(ticker, exibir_log=True):
     try:
+        # Delay adicional para contratos futuros
+        if isinstance(ticker, str) and ticker.endswith('=F'):
+            time.sleep(2)
+            
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         data = obter_dados(ticker)
 
