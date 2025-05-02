@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import time
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-# Função para calcular RSI
 def compute_rsi(data, periods=14):
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=periods).mean()
@@ -20,7 +19,6 @@ def compute_rsi(data, periods=14):
     rs = gain / loss
     return 100 - (100 / (1 + rs))
 
-# Função para calcular MACD
 def compute_macd(data, short=12, long=26, signal=9):
     exp1 = data.ewm(span=short, adjust=False).mean()
     exp2 = data.ewm(span=long, adjust=False).mean()
@@ -28,7 +26,6 @@ def compute_macd(data, short=12, long=26, signal=9):
     signal_line = macd.ewm(span=signal, adjust=False).mean()
     return macd - signal_line
 
-# Modelo LSTM
 class LSTMModel(nn.Module):
     def __init__(self, input_size, hidden_size=128, num_layers=2, output_size=1, dropout=0.2):
         super(LSTMModel, self).__init__()
@@ -39,7 +36,6 @@ class LSTMModel(nn.Module):
         lstm_out, _ = self.lstm(x)
         return self.fc(lstm_out[:, -1, :])
 
-# Preprocessamento
 def preprocessar_dados(data, seq_length=45):
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(data)
@@ -51,11 +47,10 @@ def preprocessar_dados(data, seq_length=45):
 
     return np.array(X), np.array(y).reshape(-1, 1), scaler
 
-# Obter dados com tratamento de rate limit
 @retry(stop=stop_after_attempt(3), wait=wait_random_exponential(multiplier=1, min=4, max=10))
 def obter_dados(ticker, start_date="2023-01-01"):
     """Versão com tratamento de rate limit"""
-    time.sleep(max(0.5, np.random.rand()))  # Delay aleatório entre 0.5 e 1.5 segundos
+    time.sleep(max(0.5, np.random.rand())) 
     
     hoje = datetime.now().date()
     try:
@@ -77,7 +72,7 @@ def obter_dados(ticker, start_date="2023-01-01"):
         data['Volume'] = data['Volume']
 
         try:
-            time.sleep(1)  # Delay adicional para o dólar
+            time.sleep(1) 
             dollar_data = yf.download(
                 "DX-Y.NYB", 
                 start=start_date, 
@@ -93,10 +88,9 @@ def obter_dados(ticker, start_date="2023-01-01"):
         
     except Exception as e:
         if "Rate limited" in str(e):
-            time.sleep(10)  # Espera mais longa se for rate limit
+            time.sleep(10) 
         raise
 
-# Funções restantes permanecem exatamente iguais
 def plot_predictions(y_test, predicted_prices, scaler, data, ticker, predicted_next):
     y_test_inv = scaler.inverse_transform(
         np.concatenate([y_test, np.zeros((y_test.shape[0], data.shape[1]-1))], axis=1)
@@ -126,7 +120,6 @@ def direction_accuracy(y_true, y_pred):
 
 def executar_previsao(ticker, exibir_log=True):
     try:
-        # Delay adicional para contratos futuros
         if isinstance(ticker, str) and ticker.endswith('=F'):
             time.sleep(2)
             

@@ -23,19 +23,15 @@ TICKERS_VALIDOS = {
     "OJ=F": "Suco de Laranja", "LBS=F": "Madeira"
 }
 
-# Lista de commodities válidas em ordem alfabética
 commodities = sorted(list(TICKERS_VALIDOS.values()))
 
-# Campo de seleção para o usuário escolher a commodity
 nome_commodity = st.selectbox(
     "Selecione ou digite o nome da commodity:",
     options=commodities,
     index=commodities.index("Café Arábica") if "Café Arábica" in commodities else 0
 )
 
-# Validar a entrada
 if nome_commodity in commodities:
-    # Mapear o nome da commodity para o ticker
     ticker = [k for k, v in TICKERS_VALIDOS.items() if v == nome_commodity][0]
 
     if ticker:
@@ -71,7 +67,6 @@ if nome_commodity in commodities:
 else:
     st.error(f"Valor inválido: '{nome_commodity}'. Por favor, escolha uma das seguintes commodities: {', '.join(commodities)}.")
 
-# Adicionando informações adicionais na sidebar
 st.sidebar.markdown("""
 ### ℹ️ Sobre esta aplicação
 Esta ferramenta combina:

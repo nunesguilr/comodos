@@ -121,7 +121,7 @@ def buscar_noticias_scraping(termo, termo_ingles):
     
     for url in urls:
         try:
-            time.sleep(1)  # Delay para evitar bloqueios
+            time.sleep(1)  
             response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
             if response.status_code != 200:
                 print(f"Aviso: Erro HTTP {response.status_code} ao acessar {url}")
